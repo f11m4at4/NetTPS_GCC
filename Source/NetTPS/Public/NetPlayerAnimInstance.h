@@ -18,4 +18,16 @@ public:
 	// 총을 소지하고 있는지 여부 속성
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
 	bool bHasPistol = false;
+
+	// 방향 변수 등록
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
+	float direction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
+	float speed;
+
+	UPROPERTY()
+	class ANetTPSCharacter* player;
+public:
+	virtual void NativeInitializeAnimation() override;
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };

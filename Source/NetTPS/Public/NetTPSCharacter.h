@@ -68,5 +68,40 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+public:
+	// 총을 자식으로 붙일 컴포넌트
+	UPROPERTY(VisibleAnywhere)
+	class USceneComponent* gunComp;
+
+public: // --------- 총잡기 -----------
+	UPROPERTY(EditAnywhere, Category=Input)
+	UInputAction* ia_TakePistol;
+
+	// 필요속성 : 총소유 여부, 소유중인 총, 총 검색 범위
+	bool bHasPistol = false;
+	UPROPERTY()
+	AActor* ownedPistol = nullptr;
+	UPROPERTY(EditAnywhere, Category=Gun)
+	float distanceToGun = 200;
+
+	// 월드에 배치된 총들
+	UPROPERTY()
+	TArray<AActor*> pistolActors;
+
+	virtual void BeginPlay() override;
+	
+	void TakePistol(const struct FInputActionValue& value);
+	// 총을 컴포넌에 붙이는 함수
+	void AttachPistol(AActor* pistolActor);
+
+public: // ----------- 총 놓기 -------------
+	// 입력처리 멤버들 선언
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	class UInputAction* ia_ReleaseAction;
+	// 총 놓기 처리 함수
+	void ReleasePistol(const struct FInputActionValue& value);
+	// 총을 컴포넌트에서 분리
+	void DetachPistol(AActor* pistolActor);
 };
 
