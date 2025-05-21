@@ -103,5 +103,16 @@ public: // ----------- 총 놓기 -------------
 	void ReleasePistol(const struct FInputActionValue& value);
 	// 총을 컴포넌트에서 분리
 	void DetachPistol(AActor* pistolActor);
+
+public: // ----------- 총쏘기 -------------
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	class UInputAction* ia_FireAction;
+
+	// 총알 이펙트
+	UPROPERTY(EditDefaultsOnly, Category=Gun)
+	class UParticleSystem* gunEffect;
+
+	// 총쏘기 처리함수
+	void Fire(const struct FInputActionValue& value);
 };
 

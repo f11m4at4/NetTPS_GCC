@@ -15,6 +15,9 @@ class NETTPS_API UNetPlayerAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
+	UNetPlayerAnimInstance();
+	
+public:
 	// 총을 소지하고 있는지 여부 속성
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
 	bool bHasPistol = false;
@@ -27,7 +30,18 @@ public:
 
 	UPROPERTY()
 	class ANetTPSCharacter* player;
+
+	// 총쏘기 몽타주
+	UPROPERTY(EditDefaultsOnly, Category=MyAnimSettings)
+	class UAnimMontage* fireMontage;
+
+	// 회전값 기억변수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=MyAnimSettings)
+	float pitchAngle;
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	// 총쏘기 애니메이션 재생 함수
+	void PlayFireAnimation();
 };

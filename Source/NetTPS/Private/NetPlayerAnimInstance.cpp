@@ -5,6 +5,15 @@
 
 #include "NetTPSCharacter.h"
 
+UNetPlayerAnimInstance::UNetPlayerAnimInstance()
+{
+	ConstructorHelpers::FObjectFinder<UAnimMontage> tempFire(TEXT("'/Game/Net/Animations/MM_Pistol_Fire_Montage.MM_Pistol_Fire_Montage'"));
+	if (tempFire.Succeeded())
+	{
+		fireMontage = tempFire.Object;
+	}
+}
+
 void UNetPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -26,5 +35,18 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		direction = FVector::DotProduct(vel, player->GetActorRightVector());
 
 		bHasPistol = player->bHasPistol;
+
+		// 회전값 적용
+		pitchAngle = -player->GetBaseAimRotation().GetNormalized().Pitch;
+		pitchAngle = FMath::Clamp(pitchAngle, -60.0f, 60.0f);
+	}
+}
+
+void UNetPlayerAnimInstance::PlayFireAnimation()
+{
+	// 총을 갖고 있고, 몽타주가 있을 때 재생하자
+	if (bHasPistol && fireMontage)
+	{
+		Montage_Play(fireMontage);
 	}
 }

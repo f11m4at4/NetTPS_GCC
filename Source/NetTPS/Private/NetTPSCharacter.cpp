@@ -10,7 +10,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "NetPlayerAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystem.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -76,6 +78,20 @@ ANetTPSCharacter::ANetTPSCharacter()
 	{
 		ia_ReleaseAction = tempReleasePistol.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tempFireAction(TEXT("'/Game/Net/Inputs/IA_Fire.IA_Fire'"));
+
+	if (tempFireAction.Succeeded())
+	{
+		ia_FireAction = tempFireAction.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UParticleSystem> tempBulletEffect(TEXT("'/Game/StarterContent/Particles/P_Explosion.P_Explosion'"));
+
+	if (tempBulletEffect.Succeeded())
+	{
+		gunEffect = tempBulletEffect.Object;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -115,6 +131,9 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// 총 놓기
 		EnhancedInputComponent->BindAction(ia_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
+
+		// 총쏘기
+		EnhancedInputComponent->BindAction(ia_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
 		
 	}
 	else
@@ -212,6 +231,40 @@ void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
 	meshComp->SetSimulatePhysics(true);
 	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+}
+
+void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
+{
+	// 총이 없으면 처리하지 않는다.
+	if (bHasPistol == false)
+	{
+		return;
+	}
+
+	// 총쏘기
+	// Line Trace
+	// 선에 부딪혔을 때 그 지점에 P_Explosion 가 재생 되도록 하고 싶다.
+	// 1. 선이 필요하다.
+	FVector startPos = GetFollowCamera()->GetComponentLocation();
+	FVector endPos = startPos + GetFollowCamera()->GetForwardVector() * 10000.0f;
+	// 2. 선을 쏴야한다.
+	FHitResult hitInfo;
+	FCollisionQueryParams params;
+	params.AddIgnoredActor(this);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params);
+	// 3. 선이 부딪혔으니까
+	if (bHit)
+	{
+		// 4. 효과를 재생하고 싶다.
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
+	}
+
+	// 애니메이션 재생
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayFireAnimation();
+	}
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
