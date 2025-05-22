@@ -114,5 +114,42 @@ public: // ----------- 총쏘기 -------------
 
 	// 총쏘기 처리함수
 	void Fire(const struct FInputActionValue& value);
+
+public: // -------------- UI -----------------
+	UPROPERTY(EditDefaultsOnly, Category=UI)
+	TSubclassOf<class UMainUI> mainUIWidget;
+	UPROPERTY()
+	class UMainUI* mainUI;
+
+	// 최대 총알개수
+	UPROPERTY(EditDefaultsOnly, Category=Bullet)
+	int32 maxBulletCount = 10;
+	// 남은 총알개수
+	int32 bulletCount = maxBulletCount;
+
+	// UI 초기화 함수
+	void InitUIWidget();
+
+public: // ------------- 재장전 ------------
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	class UInputAction* ia_Relaod;
+	// 재장전 중인지 여부를 기억하는 변수
+	bool isReloading = false;
+	
+	void ReloadPistol(const struct FInputActionValue& value);
+
+	// 총알 UI 초기화 함수
+	void InitAmmoUI();
+
+public: // ------------ 플레이어 체력 --------------
+	UPROPERTY(EditDefaultsOnly, Category=HP)
+	float maxHP = 3;
+	float HP = maxHP;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* hpUIComp;
+
+public: // ----------- 피격 처리 --------------
+	void DamageProcess();
 };
 

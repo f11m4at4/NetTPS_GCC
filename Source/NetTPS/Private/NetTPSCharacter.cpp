@@ -10,7 +10,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 
@@ -92,6 +94,23 @@ ANetTPSCharacter::ANetTPSCharacter()
 	{
 		gunEffect = tempBulletEffect.Object;
 	}
+
+	ConstructorHelpers::FClassFinder<UMainUI> tempMainUI(TEXT("'/Game/Net/UIs/WBP_MainUI.WBP_MainUI_C'"));
+	if (tempMainUI.Succeeded())
+	{
+		mainUIWidget = tempMainUI.Class;
+	}
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tempReloadAction(TEXT("'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
+
+	if (tempReloadAction.Succeeded())
+	{
+		ia_Relaod = tempReloadAction.Object;
+	}
+
+	// UI 위젯컴포넌트 추가
+	hpUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("hpUIComp"));
+	hpUIComp->SetupAttachment(GetMesh());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -134,6 +153,9 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// 총쏘기
 		EnhancedInputComponent->BindAction(ia_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
+
+		// 재장전
+		EnhancedInputComponent->BindAction(ia_Relaod, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
 		
 	}
 	else
@@ -157,7 +179,68 @@ void ANetTPSCharacter::BeginPlay()
 			pistolActors.Add(tempPistol);
 		}
 	}
+
+	InitUIWidget();
 }
+
+// main ui 위젯을 만들어 화면에 표시한다.
+void ANetTPSCharacter::InitUIWidget()
+{
+	// 내 캐릭터일 때만 mainUI 만들도록 처리
+	auto pc = Cast<APlayerController>(Controller);
+	if (pc == nullptr)
+	{
+		return;
+	}
+	
+	if (mainUIWidget)
+	{
+		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
+		mainUI->AddToViewport();
+		mainUI->ShowCrosshair(false);
+
+		// 총알세팅
+		bulletCount = maxBulletCount;
+		for (int i=0; i < bulletCount; i++)
+		{
+			mainUI->AddBullet();
+		}
+	}
+}
+
+void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
+{
+	// 총을 갖고 있지 않으면 처리 하지 않는다.
+	// 혹은 이미지 재장전 중일때도 처리하지 않는다.
+	if (bHasPistol == false || isReloading)
+	{
+		return;
+	}
+
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayReloadAnimation();
+	}
+
+	// 재장전 중으로 설정
+	isReloading = true;
+}
+
+void ANetTPSCharacter::InitAmmoUI()
+{
+	// 총알을 다시 최대 개수만큼 채워주자.
+	bulletCount = maxBulletCount;
+	mainUI->RemoveAllAmmo();
+	for (int i=0; i < bulletCount; i++)
+	{
+		mainUI->AddBullet();
+	}
+
+	// 재장전 종료
+	isReloading = false;
+}
+
 
 void ANetTPSCharacter::TakePistol(const struct FInputActionValue& value)
 {
@@ -206,12 +289,14 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 	// 물리기능 꺼주기
 	meshComp->SetSimulatePhysics(false);
 	meshComp->AttachToComponent(gunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	mainUI->ShowCrosshair(true);
 }
 
 void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
 {
 	// 총을 잡고 있지 않으면 처리 하지 않는다.
-	if (bHasPistol == false)
+	if (bHasPistol == false || isReloading)
 	{
 		return;
 	}
@@ -231,12 +316,14 @@ void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
 	meshComp->SetSimulatePhysics(true);
 	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+	mainUI->ShowCrosshair(false);
 }
 
 void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 {
 	// 총이 없으면 처리하지 않는다.
-	if (bHasPistol == false)
+	if (bHasPistol == false || bulletCount <= 0 || isReloading)
 	{
 		return;
 	}
@@ -257,6 +344,13 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 	{
 		// 4. 효과를 재생하고 싶다.
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
+
+		// 5. 맞은 대상이 상대방일 경우 피격 처리
+		auto otherPlayer = Cast<ANetTPSCharacter>(hitInfo.GetActor());
+		if (otherPlayer)
+		{
+			otherPlayer->DamageProcess();
+		}
 	}
 
 	// 애니메이션 재생
@@ -265,7 +359,24 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 	{
 		anim->PlayFireAnimation();
 	}
+
+	// 총알 제거
+	bulletCount--;
+	mainUI->PopBullet(bulletCount);
 }
+
+
+void ANetTPSCharacter::DamageProcess()
+{
+	// 체력 감소시키기
+	HP--;
+
+	// UI Update
+	// 나일경우는 mainUI hp 를 갱신
+	// 상대방일 경우
+	// -> healthBar hp 를 갱신
+}
+
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
 {

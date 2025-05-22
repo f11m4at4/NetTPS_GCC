@@ -12,6 +12,12 @@ UNetPlayerAnimInstance::UNetPlayerAnimInstance()
 	{
 		fireMontage = tempFire.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> tempReload(TEXT("'/Game/Net/Animations/MM_Pistol_Reload_Montage.MM_Pistol_Reload_Montage'"));
+	if (tempReload.Succeeded())
+	{
+		reloadMontage = tempReload.Object;
+	}
 }
 
 void UNetPlayerAnimInstance::NativeInitializeAnimation()
@@ -49,4 +55,19 @@ void UNetPlayerAnimInstance::PlayFireAnimation()
 	{
 		Montage_Play(fireMontage);
 	}
+}
+
+// 재장전 애니메이션 재생
+void UNetPlayerAnimInstance::PlayReloadAnimation()
+{
+	if (bHasPistol && reloadMontage)
+	{
+		Montage_Play(reloadMontage);
+	}
+}
+
+// 재장전 애니메이션 종료 이벤트 발생시 처리 콜백함수
+void UNetPlayerAnimInstance::AnimNotify_OnReloadFinish()
+{
+	player->InitAmmoUI();
 }

@@ -38,10 +38,22 @@ public:
 	// 회전값 기억변수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=MyAnimSettings)
 	float pitchAngle;
+
+	// 재장전 몽타주
+	UPROPERTY(EditDefaultsOnly, Category=MyAnimSettings)
+	class UAnimMontage* reloadMontage;
+
+	
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	// 총쏘기 애니메이션 재생 함수
 	void PlayFireAnimation();
+
+	// 재장전 애니메이션 재생
+	void PlayReloadAnimation();
+	// 재장전 애니메이션 노티파이 이벤트 콜백 처리 함수
+	UFUNCTION()
+	void AnimNotify_OnReloadFinish();
 };
