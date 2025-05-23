@@ -144,12 +144,27 @@ public: // ------------- 재장전 ------------
 public: // ------------ 플레이어 체력 --------------
 	UPROPERTY(EditDefaultsOnly, Category=HP)
 	float maxHP = 3;
-	float HP = maxHP;
+	float hp = maxHP;
+
+	// 머리는 변수, 몸통은 함수인 get/set property 로 변경
+	__declspec(property(get = GetHP, put = SetHP))
+	float HP;
+	
+	float GetHP() const { return hp; }
+	void SetHP(float value);
 
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* hpUIComp;
 
 public: // ----------- 피격 처리 --------------
 	void DamageProcess();
+
+public: // ------------ 죽음 처리 --------------
+	bool isDead = false;
+
+public: // ---------------- Network -----------------
+	virtual  void Tick(float DeltaSeconds) override;
+	// 네트워크 상태로그 출력함수
+	void PrintNetLog();
 };
 

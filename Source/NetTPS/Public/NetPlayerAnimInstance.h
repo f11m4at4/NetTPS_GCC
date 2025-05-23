@@ -43,7 +43,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category=MyAnimSettings)
 	class UAnimMontage* reloadMontage;
 
-	
+	// 죽었는지 상태 기억 변수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=MyAnimSettings)
+	bool isDead = false;
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;

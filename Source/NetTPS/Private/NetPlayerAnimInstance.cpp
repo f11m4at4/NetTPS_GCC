@@ -45,6 +45,9 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		// 회전값 적용
 		pitchAngle = -player->GetBaseAimRotation().GetNormalized().Pitch;
 		pitchAngle = FMath::Clamp(pitchAngle, -60.0f, 60.0f);
+
+		// 죽음 상태 적용
+		isDead = player->isDead;
 	}
 }
 

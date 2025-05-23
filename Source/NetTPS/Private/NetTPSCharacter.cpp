@@ -9,9 +9,11 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "HealthBar.h"
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "NetTPS.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -368,13 +370,36 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 
 void ANetTPSCharacter::DamageProcess()
 {
-	// 체력 감소시키기
 	HP--;
 
+	// 죽음처리
+	if (HP <= 0)
+	{
+		isDead = true;
+	}
+}
+
+void ANetTPSCharacter::SetHP(float value)
+{
+	// 체력 감소시키기
+	hp = value;
+
 	// UI Update
+	float percent = hp / maxHP;
 	// 나일경우는 mainUI hp 를 갱신
+	//-> PlayerController 있을 때 mainUI 를 생성한다.
+	if (mainUI)
+	{
+		mainUI->hp = percent;
+	}
 	// 상대방일 경우
-	// -> healthBar hp 를 갱신
+	else
+	{
+		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
+		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
+		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+		hpUI->hp = percent;
+	}
 }
 
 
@@ -412,4 +437,24 @@ void ANetTPSCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+// ------------------------ Network--------------------------------
+void ANetTPSCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	//PrintNetLog();
+}
+
+void ANetTPSCharacter::PrintNetLog()
+{
+	// 네트워크 상태 로그 출력
+	const FString connStr = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT("Invalid Connection");
+	// Owner 출력
+	const FString ownerName = GetOwner() ? GetOwner()->GetName() : TEXT("No Owner");
+	// Role 출력
+	const FString logStr = FString::Printf(TEXT("Connection : %s\nOwner Name : %s\nLocal Role : %s\nRemote Role : %s"), *connStr, *ownerName, *LOCALROLE, *REMOTEROLE);
+	
+	DrawDebugString(GetWorld(), GetActorLocation(), logStr, nullptr,FColor::Yellow, 0, true, 1);
 }

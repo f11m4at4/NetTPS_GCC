@@ -11,3 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(NetTPS, Log, All);
 #define PRINT_APPINFO() UE_LOG(NetTPS, Warning, TEXT("%s"), *APPINFO)
 #define PRINTLOG(fmt,...) \
 	UE_LOG(NetTPS, Warning, TEXT("%s : %s"), *APPINFO, *FString::Printf(fmt, ##__VA_ARGS__))
+
+// Role
+#define LOCALROLE (UEnum::GetValueAsString<ENetRole>(GetLocalRole()))
+#define REMOTEROLE (UEnum::GetValueAsString<ENetRole>(GetRemoteRole()))
