@@ -36,4 +36,30 @@ public:
 
 	// Owner 찾아서 설정하는것 함수
 	void FindOwner();
+
+public: // ---------- 회전 동기화 처리 ------------
+	UPROPERTY(ReplicatedUsing=OnRep_RotYaw)
+	float rotYaw = 0;
+
+	// rotYaw 변수가 변경 됐을 때 호출되는 이벤트 콜백
+	UFUNCTION()
+	void OnRep_RotYaw();
+	
+	float rotSpeed = 50;
+
+	// 부드럽게 회전 보간 하기 위한 변수
+	float currentTime = 0;
+	float lastTime = 0;
+
+public: // 재질 동기화기를 위한 속성
+	UPROPERTY()
+	class UMaterialInstanceDynamic* mat;
+	// 재질에 동기화될 색상
+	UPROPERTY(ReplicatedUsing=OnRep_ChangeMatColor)
+	FLinearColor matColor;
+	UFUNCTION()
+	void OnRep_ChangeMatColor();
+	
+public:
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };
