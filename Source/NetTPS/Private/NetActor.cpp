@@ -43,13 +43,14 @@ void ANetActor::BeginPlay()
 		auto changeColorFunc = [&]()
 		{
 			// 색을 랜덤으로 설정해서 넣어주기
-			matColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
-			OnRep_ChangeMatColor();
+			FLinearColor matColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
+			// OnRep_ChangeMatColor();
+			ServerRPC_ChangeColor(matColor);
 		};
 		GetWorldTimerManager().SetTimer(handle, changeColorFunc, 1, true);
 	}
 }
-+
+
 // matColor 가 네트워크에서 변경됐을 때 호출되는 콜백
 // -> 클라이언트에서만 호출되는 함수다.
 void ANetActor::OnRep_ChangeMatColor()
@@ -60,6 +61,37 @@ void ANetActor::OnRep_ChangeMatColor()
 	}
 }
 
+// 클라에서 서버로 보내는 RPC
+void ANetActor::ServerRPC_ChangeColor_Implementation(const FLinearColor& newColor)
+{
+	// Listen Server 일때
+	// -> 서버이자 클라이언트다.
+	// if (mat)
+	// {
+	// 	mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	// }
+	// Server PC와 Client 의 PC 가 같다. 그들끼리만 통신
+	// ClientRPC_ChangeColor(newColor);
+
+	//-> 모든 클라이언트한테 보낸다.단, PC->A 캐릭터라면 모든 클라의 A 한테 보낸다.
+	NetMulticastRPC_ChangeColor(newColor);
+}
+
+void ANetActor::ClientRPC_ChangeColor_Implementation(const FLinearColor& newColor)
+{
+	if (mat)
+	{
+		mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	}
+}
+
+void ANetActor::NetMulticastRPC_ChangeColor_Implementation(const FLinearColor& newColor)
+{
+	if (mat)
+	{
+		mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	}
+}
 
 // Called every frame
 void ANetActor::Tick(float DeltaTime)

@@ -79,7 +79,9 @@ public: // --------- 총잡기 -----------
 	UInputAction* ia_TakePistol;
 
 	// 필요속성 : 총소유 여부, 소유중인 총, 총 검색 범위
+	UPROPERTY(Replicated)
 	bool bHasPistol = false;
+	
 	UPROPERTY()
 	AActor* ownedPistol = nullptr;
 	UPROPERTY(EditAnywhere, Category=Gun)
@@ -124,8 +126,12 @@ public: // -------------- UI -----------------
 	// 최대 총알개수
 	UPROPERTY(EditDefaultsOnly, Category=Bullet)
 	int32 maxBulletCount = 10;
+	
 	// 남은 총알개수
+	UPROPERTY(ReplicatedUsing=OnRep_BulletCount)
 	int32 bulletCount = maxBulletCount;
+	UFUNCTION()
+	void OnRep_BulletCount();
 
 	// UI 초기화 함수
 	void InitUIWidget();
@@ -166,5 +172,25 @@ public: // ---------------- Network -----------------
 	virtual  void Tick(float DeltaSeconds) override;
 	// 네트워크 상태로그 출력함수
 	void PrintNetLog();
+
+public: // -------------- RPC --------------------
+	// -> 총잡기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_TakePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_TakePistol(AActor* pistolActor);
+	// -> 총놓기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ReleasePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_ReleasePistol(AActor* pistolActor);
+	// -> 총쏘기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_FirePistol();
+	// 부딪힌 결과 정보, hitinfo 정보
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_FirePistol(bool bHit, const FHitResult& hitInfo);
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };
 

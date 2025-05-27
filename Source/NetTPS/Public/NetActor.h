@@ -59,7 +59,14 @@ public: // 재질 동기화기를 위한 속성
 	FLinearColor matColor;
 	UFUNCTION()
 	void OnRep_ChangeMatColor();
-	
+
+public: // ----------- RPC -------------
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ChangeColor(const FLinearColor& newColor);
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ChangeColor(const FLinearColor& newColor);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastRPC_ChangeColor(const FLinearColor& newColor);
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

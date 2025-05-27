@@ -16,6 +16,7 @@
 #include "NetTPS.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystem.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -254,6 +255,13 @@ void ANetTPSCharacter::TakePistol(const struct FInputActionValue& value)
 	{
 		return;
 	}
+
+	// 서버에 총잡기 버튼을 눌렀다고 Server RPC 보내자.
+	ServerRPC_TakePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_TakePistol_Implementation()
+{
 	// 2. 범위 안에 있어야한다.
 	// -> 월드에 있는 모든 총을 가져와서 범위 검사를 해야 한다.
 	// 2.1 월드에 있는 모든 액터를 가져온다.
@@ -278,10 +286,16 @@ void ANetTPSCharacter::TakePistol(const struct FInputActionValue& value)
 		ownedPistol->SetOwner(this);
 		bHasPistol = true;
 
-		// 총 붙이기
-		AttachPistol(tempPistol);
+		// 모든 클라이언트들한테 시각화처리 요청하기
+		MultiRPC_TakePistol(tempPistol);
 		break;
-	}
+	}	
+}
+
+void ANetTPSCharacter::MultiRPC_TakePistol_Implementation(AActor* pistolActor)
+{
+		// 총 붙이기
+		AttachPistol(pistolActor);
 }
 
 void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
@@ -292,7 +306,12 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 	meshComp->SetSimulatePhysics(false);
 	meshComp->AttachToComponent(gunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
-	mainUI->ShowCrosshair(true);
+	// 내 캐릭터 일때만 -> Player Controller 에 의해서 제어 되고 있을 때만.
+	// Role -> Autonomous 일때
+	if (IsLocallyControlled() && mainUI)
+	{
+		mainUI->ShowCrosshair(true);
+	}
 }
 
 void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
@@ -302,15 +321,28 @@ void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
 	{
 		return;
 	}
-	
+
+	// 서버에 총놓기 요청하기
+	ServerRPC_ReleasePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_ReleasePistol_Implementation()
+{
 	// 잡은 총을 놓고 싶다.
 	if (ownedPistol)
 	{
-		DetachPistol(ownedPistol);
+		// 모든 클라이언트한테 총놓기 메시지 보내기
+		MultiRPC_ReleasePistol(ownedPistol);
+		
 		bHasPistol = false;
 		ownedPistol->SetOwner(nullptr);
 		ownedPistol = nullptr;
 	}
+}
+
+void ANetTPSCharacter::MultiRPC_ReleasePistol_Implementation(AActor* pistolActor)
+{
+	DetachPistol(pistolActor);
 }
 
 void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
@@ -319,7 +351,10 @@ void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
 	meshComp->SetSimulatePhysics(true);
 	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 
-	mainUI->ShowCrosshair(false);
+	if (IsLocallyControlled() && mainUI)
+	{
+		mainUI->ShowCrosshair(false);
+	}
 }
 
 void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
@@ -330,6 +365,12 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 		return;
 	}
 
+	// Server 에 총쏘기 처리 요청을 한다.
+	ServerRPC_FirePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_FirePistol_Implementation()
+{
 	// 총쏘기
 	// Line Trace
 	// 선에 부딪혔을 때 그 지점에 P_Explosion 가 재생 되도록 하고 싶다.
@@ -344,15 +385,29 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 	// 3. 선이 부딪혔으니까
 	if (bHit)
 	{
-		// 4. 효과를 재생하고 싶다.
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
-
 		// 5. 맞은 대상이 상대방일 경우 피격 처리
 		auto otherPlayer = Cast<ANetTPSCharacter>(hitInfo.GetActor());
 		if (otherPlayer)
 		{
 			otherPlayer->DamageProcess();
 		}
+	}
+
+	// 총알 제거
+	bulletCount--;
+	OnRep_BulletCount();
+	
+	// 클라이언트들한테 결과 처리 하도록 보내기
+	MultiRPC_FirePistol(bHit, hitInfo);
+}
+
+// 클라이언트에서 호출되는 RPC 함수
+void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo)
+{
+	if (bHit)
+	{
+		// 4. 효과를 재생하고 싶다.
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
 	}
 
 	// 애니메이션 재생
@@ -362,11 +417,18 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 		anim->PlayFireAnimation();
 	}
 
-	// 총알 제거
-	bulletCount--;
-	mainUI->PopBullet(bulletCount);
+	
 }
 
+// bulletCount 변수가 서버에서 변경되면 자동으로 호출되는 콜백 함수
+// -> 클라이언트에서만 호출되는 함수
+void ANetTPSCharacter::OnRep_BulletCount()
+{
+	if (mainUI)
+	{
+		mainUI->PopBullet(bulletCount);
+	}
+}
 
 void ANetTPSCharacter::DamageProcess()
 {
@@ -458,3 +520,14 @@ void ANetTPSCharacter::PrintNetLog()
 	
 	DrawDebugString(GetWorld(), GetActorLocation(), logStr, nullptr,FColor::Yellow, 0, true, 1);
 }
+
+void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ANetTPSCharacter, bHasPistol);
+	DOREPLIFETIME(ANetTPSCharacter, bulletCount);
+}
+
+
+
