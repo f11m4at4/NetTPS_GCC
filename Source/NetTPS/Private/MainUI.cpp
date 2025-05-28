@@ -43,3 +43,8 @@ void UMainUI::RemoveAllAmmo()
 {
 	BulletPanel->ClearChildren();
 }
+
+void UMainUI::PlayDamageAnimation()
+{
+	PlayAnimation(DamageAnim);
+}

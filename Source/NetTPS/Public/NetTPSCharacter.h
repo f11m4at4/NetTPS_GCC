@@ -128,7 +128,7 @@ public: // -------------- UI -----------------
 	int32 maxBulletCount = 10;
 	
 	// 남은 총알개수
-	UPROPERTY(ReplicatedUsing=OnRep_BulletCount)
+	// UPROPERTY(ReplicatedUsing=OnRep_BulletCount)
 	int32 bulletCount = maxBulletCount;
 	UFUNCTION()
 	void OnRep_BulletCount();
@@ -150,7 +150,10 @@ public: // ------------- 재장전 ------------
 public: // ------------ 플레이어 체력 --------------
 	UPROPERTY(EditDefaultsOnly, Category=HP)
 	float maxHP = 3;
+	UPROPERTY(ReplicatedUsing=OnRep_HP)
 	float hp = maxHP;
+	UFUNCTION()
+	void OnRep_HP();
 
 	// 머리는 변수, 몸통은 함수인 get/set property 로 변경
 	__declspec(property(get = GetHP, put = SetHP))
@@ -189,7 +192,13 @@ public: // -------------- RPC --------------------
 	void ServerRPC_FirePistol();
 	// 부딪힌 결과 정보, hitinfo 정보
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiRPC_FirePistol(bool bHit, const FHitResult& hitInfo);
+	void MultiRPC_FirePistol(bool bHit, const FHitResult& hitInfo, int bc);
+
+	// -> 재장전
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ReloadPistol();
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ReloadPistol(int bc);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

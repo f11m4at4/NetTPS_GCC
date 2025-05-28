@@ -25,6 +25,9 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* BulletPanel;
 
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	class UWidgetAnimation* DamageAnim;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Bullet")
 	TSubclassOf<class UUserWidget> bulletUIFactory;
 
@@ -41,4 +44,7 @@ public:
 	
 	// 모든 총알 UI 제거
 	void RemoveAllAmmo();
+
+	// 피격처리 애니메이션 재생
+	void PlayDamageAnimation();
 };

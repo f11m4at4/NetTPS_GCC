@@ -208,6 +208,12 @@ void ANetTPSCharacter::InitUIWidget()
 		{
 			mainUI->AddBullet();
 		}
+
+		// hpuiComp 화면에 보여지면 안된다.
+		if (hpUIComp)
+		{
+			hpUIComp->SetVisibility(false);
+		}
 	}
 }
 
@@ -225,15 +231,21 @@ void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 	{
 		anim->PlayReloadAnimation();
 	}
-
+	
 	// 재장전 중으로 설정
 	isReloading = true;
 }
 
-void ANetTPSCharacter::InitAmmoUI()
+void ANetTPSCharacter::ServerRPC_ReloadPistol_Implementation()
 {
 	// 총알을 다시 최대 개수만큼 채워주자.
 	bulletCount = maxBulletCount;
+	ClientRPC_ReloadPistol(maxBulletCount);
+}
+
+void ANetTPSCharacter::ClientRPC_ReloadPistol_Implementation(int bc)
+{
+	bulletCount = bc;
 	mainUI->RemoveAllAmmo();
 	for (int i=0; i < bulletCount; i++)
 	{
@@ -242,6 +254,13 @@ void ANetTPSCharacter::InitAmmoUI()
 
 	// 재장전 종료
 	isReloading = false;
+}
+
+// 호출되는 시점이 언제냐면 -> 애니메이션 종료되는 시점에 호출된다.
+void ANetTPSCharacter::InitAmmoUI()
+{
+	// 서버에 요청하기
+	ServerRPC_ReloadPistol();
 }
 
 
@@ -395,15 +414,16 @@ void ANetTPSCharacter::ServerRPC_FirePistol_Implementation()
 
 	// 총알 제거
 	bulletCount--;
-	OnRep_BulletCount();
+	//OnRep_BulletCount();
 	
 	// 클라이언트들한테 결과 처리 하도록 보내기
-	MultiRPC_FirePistol(bHit, hitInfo);
+	MultiRPC_FirePistol(bHit, hitInfo, bulletCount);
 }
 
 // 클라이언트에서 호출되는 RPC 함수
-void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo)
+void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo, int bc)
 {
+	bulletCount = bc;
 	if (bHit)
 	{
 		// 4. 효과를 재생하고 싶다.
@@ -417,7 +437,10 @@ void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitR
 		anim->PlayFireAnimation();
 	}
 
-	
+	if (mainUI)
+	{
+		mainUI->PopBullet(bulletCount);
+	}
 }
 
 // bulletCount 변수가 서버에서 변경되면 자동으로 호출되는 콜백 함수
@@ -446,6 +469,14 @@ void ANetTPSCharacter::SetHP(float value)
 	// 체력 감소시키기
 	hp = value;
 
+	// 서버에서 처리할때 (Listen Server 이기 때문에 C, S 같이 존재한다.)
+	// -> 따라서 서버와 함께 있는 클라에도 화면 갱신 처리를 해줘야 한다.
+	OnRep_HP();
+}
+
+// 클라이언트에서만 호출되는 이벤트(C++)
+void ANetTPSCharacter::OnRep_HP()
+{
 	// UI Update
 	float percent = hp / maxHP;
 	// 나일경우는 mainUI hp 를 갱신
@@ -453,6 +484,8 @@ void ANetTPSCharacter::SetHP(float value)
 	if (mainUI)
 	{
 		mainUI->hp = percent;
+		// 피격효과 처리
+		mainUI->PlayDamageAnimation();
 	}
 	// 상대방일 경우
 	else
@@ -463,7 +496,6 @@ void ANetTPSCharacter::SetHP(float value)
 		hpUI->hp = percent;
 	}
 }
-
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
 {
@@ -507,7 +539,22 @@ void ANetTPSCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	//PrintNetLog();
+
+	// 빌보딩처리
+	if (hpUIComp && hpUIComp->GetVisibleFlag())
+	{
+		// 카메라를 바라보도록 하고 싶다.
+		// 카메라로 향하는 방향이 필요하다.
+		// dir = target - me
+		// 1. P.C -> 2. Pawn. -> 3. GetFollow
+		FVector camLocation = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->GetCameraLocation();
+		FVector direction = camLocation - hpUIComp->GetComponentLocation();
+		// direction.Z = 0;
+		hpUIComp->SetWorldRotation(direction.ToOrientationRotator());
+	}
 }
+
+
 
 void ANetTPSCharacter::PrintNetLog()
 {
@@ -526,7 +573,9 @@ void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ANetTPSCharacter, bHasPistol);
-	DOREPLIFETIME(ANetTPSCharacter, bulletCount);
+	DOREPLIFETIME(ANetTPSCharacter, hp);
+	
+	// DOREPLIFETIME(ANetTPSCharacter, bulletCount);
 }
 
 
