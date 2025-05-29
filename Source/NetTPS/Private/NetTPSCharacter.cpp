@@ -14,6 +14,7 @@
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "NetTPS.h"
+#include "Components/HorizontalBox.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -114,6 +115,18 @@ ANetTPSCharacter::ANetTPSCharacter()
 	// UI 위젯컴포넌트 추가
 	hpUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("hpUIComp"));
 	hpUIComp->SetupAttachment(GetMesh());
+
+	ConstructorHelpers::FClassFinder<UHealthBar>tempHP(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UIs/WBP_HealthBar.WBP_HealthBar'_C"));
+	if (tempHP.Succeeded())
+	{
+		hpUIComp->SetWidgetClass(tempHP.Class);
+	}
+
+	ConstructorHelpers::FClassFinder<UCameraShakeBase> tempCS(TEXT("'/Game/Net/Blueprints/BP_CameraShake.BP_CameraShake_C'"));
+	if (tempCS.Succeeded())
+	{
+		damageCameraShake = tempCS.Class;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -336,7 +349,7 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
 {
 	// 총을 잡고 있지 않으면 처리 하지 않는다.
-	if (bHasPistol == false || isReloading)
+	if (bHasPistol == false || isReloading || IsLocallyControlled() == false)
 	{
 		return;
 	}
@@ -477,6 +490,21 @@ void ANetTPSCharacter::SetHP(float value)
 // 클라이언트에서만 호출되는 이벤트(C++)
 void ANetTPSCharacter::OnRep_HP()
 {
+	// 죽음처리
+	if (hp <= 0)
+	{
+		// 죽음 상태로 전환
+		isDead = true;
+		// 총 떨어뜨리기
+		ReleasePistol(FInputActionValue());
+		// 충돌체 비활성화
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// 못움직이게 처리
+		GetCharacterMovement()->DisableMovement();
+	}
+
+	
 	// UI Update
 	float percent = hp / maxHP;
 	// 나일경우는 mainUI hp 를 갱신
@@ -486,15 +514,41 @@ void ANetTPSCharacter::OnRep_HP()
 		mainUI->hp = percent;
 		// 피격효과 처리
 		mainUI->PlayDamageAnimation();
+
+		// 카메라셰이크재생
+		if (damageCameraShake)
+		{
+			auto pc = Cast<APlayerController>(Controller);
+			pc->ClientStartCameraShake(damageCameraShake);
+		}
 	}
 	// 상대방일 경우
 	else
 	{
 		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
 		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
-		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
-		hpUI->hp = percent;
+		if (hpUIComp)
+		{
+			auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+			if (hpUI)
+				hpUI->hp = percent;
+		}
 	}
+}
+
+// 카메라의 채도를 떨어뜨리자.
+// -> UI 를 화면에 표시하고 싶다.
+// -> 화면에 마우스를 표시해줘야한다.
+void ANetTPSCharacter::DieProcess()
+{
+	// -> 화면에 마우스를 표시해줘야한다.
+	auto pc = Cast<APlayerController>(Controller);
+	pc->SetShowMouseCursor(true);
+	// 카메라의 채도를 떨어뜨리자.
+	GetFollowCamera()->PostProcessSettings.ColorSaturation = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	// gameover UI 표시
+	mainUI->GameoverUI->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)

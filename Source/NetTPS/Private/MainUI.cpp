@@ -2,7 +2,11 @@
 
 
 #include "MainUI.h"
+
+#include "NetPlayerController.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/UniformGridPanel.h"
 
@@ -13,6 +17,13 @@ UMainUI::UMainUI(const FObjectInitializer& ObjectInitializer) : Super(ObjectInit
 	{
 		bulletUIFactory = tempBullet.Class;
 	}
+}
+
+void UMainUI::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	btn_retry->OnClicked.AddDynamic(this, &UMainUI::OnRetryClicked);
 }
 
 void UMainUI::ShowCrosshair(bool isShow)
@@ -47,4 +58,17 @@ void UMainUI::RemoveAllAmmo()
 void UMainUI::PlayDamageAnimation()
 {
 	PlayAnimation(DamageAnim);
+}
+
+void UMainUI::OnRetryClicked()
+{
+	// 1. UI 안보이도록 처리
+	GameoverUI->SetVisibility(ESlateVisibility::Hidden);
+	// 2. 서버에 리스폰 요청을 하자.
+	auto pc = Cast<ANetPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (pc)
+	{
+		pc->SetShowMouseCursor(false);
+		pc->ServerRPC_RespawnPlayer();
+	}
 }

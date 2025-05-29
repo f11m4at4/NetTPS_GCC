@@ -33,7 +33,16 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category="HP")
 	float hp = 1.0f;
+
+	UPROPERTY(meta=(BindWidget))
+	class UHorizontalBox* GameoverUI;
+	UPROPERTY(meta=(BindWidget))
+	class UButton* btn_retry;
+	UPROPERTY(meta=(BindWidget))
+	class UButton* btn_exit;
 public:
+	virtual void NativeConstruct() override;
+	
 	// 크로스헤어 보일지여부 처리 함수
 	void ShowCrosshair(bool isShow);
 
@@ -47,4 +56,8 @@ public:
 
 	// 피격처리 애니메이션 재생
 	void PlayDamageAnimation();
+
+	// retry 버튼 이벤트 콜백
+	UFUNCTION()
+	void OnRetryClicked();
 };

@@ -74,3 +74,12 @@ void UNetPlayerAnimInstance::AnimNotify_OnReloadFinish()
 {
 	player->InitAmmoUI();
 }
+
+void UNetPlayerAnimInstance::AnimNotify_DieEnd()
+{
+	// 자기 자신이 그만하거나, 재도전하거나...
+	if (player && player->IsLocallyControlled())
+	{
+		player->DieProcess();
+	}
+}

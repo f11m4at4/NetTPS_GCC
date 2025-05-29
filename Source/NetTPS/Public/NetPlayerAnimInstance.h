@@ -58,4 +58,8 @@ public:
 	// 재장전 애니메이션 노티파이 이벤트 콜백 처리 함수
 	UFUNCTION()
 	void AnimNotify_OnReloadFinish();
+
+	// 죽음 애니메이션 끝났을때 호출되는 함수
+	UFUNCTION()
+	void AnimNotify_DieEnd();
 };
