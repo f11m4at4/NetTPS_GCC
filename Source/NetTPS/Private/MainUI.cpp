@@ -69,6 +69,7 @@ void UMainUI::OnRetryClicked()
 	if (pc)
 	{
 		pc->SetShowMouseCursor(false);
-		pc->ServerRPC_RespawnPlayer();
+		// pc->ServerRPC_RespawnPlayer();
+		pc->ServerRPC_ChangeToSpectator();
 	}
 }

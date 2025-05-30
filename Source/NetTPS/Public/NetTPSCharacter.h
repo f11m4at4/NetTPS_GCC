@@ -91,6 +91,9 @@ public: // --------- 총잡기 -----------
 	UPROPERTY()
 	TArray<AActor*> pistolActors;
 
+	// Pawn 이 PC 한테 Possess 됐을때 호출되는 함수
+	virtual void PossessedBy(AController* NewController) override;
+	
 	virtual void BeginPlay() override;
 	
 	void TakePistol(const struct FInputActionValue& value);
@@ -118,8 +121,8 @@ public: // ----------- 총쏘기 -------------
 	void Fire(const struct FInputActionValue& value);
 
 public: // -------------- UI -----------------
-	UPROPERTY(EditDefaultsOnly, Category=UI)
-	TSubclassOf<class UMainUI> mainUIWidget;
+	// UPROPERTY(EditDefaultsOnly, Category=UI)
+	// TSubclassOf<class UMainUI> mainUIWidget;
 	UPROPERTY()
 	class UMainUI* mainUI;
 

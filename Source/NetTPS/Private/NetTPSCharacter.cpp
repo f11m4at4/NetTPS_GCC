@@ -13,6 +13,7 @@
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "NetPlayerController.h"
 #include "NetTPS.h"
 #include "Components/HorizontalBox.h"
 #include "Components/WidgetComponent.h"
@@ -99,12 +100,7 @@ ANetTPSCharacter::ANetTPSCharacter()
 		gunEffect = tempBulletEffect.Object;
 	}
 
-	ConstructorHelpers::FClassFinder<UMainUI> tempMainUI(TEXT("'/Game/Net/UIs/WBP_MainUI.WBP_MainUI_C'"));
-	if (tempMainUI.Succeeded())
-	{
-		mainUIWidget = tempMainUI.Class;
-	}
-
+	
 	ConstructorHelpers::FObjectFinder<UInputAction> tempReloadAction(TEXT("'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
 
 	if (tempReloadAction.Succeeded())
@@ -180,6 +176,20 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void ANetTPSCharacter::PossessedBy(AController* NewController)
+{
+	PRINTLOG(TEXT("Begin"));
+	Super::PossessedBy(NewController);
+
+	// 내꺼 일때
+	if (IsLocallyControlled())
+	{
+		// InitUIWidget 호출해주자.
+		InitUIWidget();
+	}
+	PRINTLOG(TEXT("End"));
+}
+
 void ANetTPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -196,26 +206,44 @@ void ANetTPSCharacter::BeginPlay()
 		}
 	}
 
-	InitUIWidget();
+	// 컨트롤러가 있어야 한다.
+	// 클라이언트에서 실행되고 있어야한다. -> local role => autonomous
+	if (IsLocallyControlled() && HasAuthority() == false)
+	{
+		InitUIWidget();
+	}
 }
 
 // main ui 위젯을 만들어 화면에 표시한다.
 void ANetTPSCharacter::InitUIWidget()
 {
+	PRINTLOG(TEXT("[%s] Begin"), Controller?TEXT("PLAYER") : TEXT("NO PLAYER"));
+
 	// 내 캐릭터일 때만 mainUI 만들도록 처리
-	auto pc = Cast<APlayerController>(Controller);
+	auto pc = Cast<ANetPlayerController>(Controller);
 	if (pc == nullptr)
 	{
 		return;
 	}
 	
-	if (mainUIWidget)
+	if (pc->mainUIWidget)
 	{
-		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
+		// 기존에 이미 생성했으면 그녀석을 할당해주자
+		if (pc->mainUI == nullptr)
+		{
+			pc->mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), pc->mainUIWidget));
+		}
+		mainUI = pc->mainUI;
 		mainUI->AddToViewport();
 		mainUI->ShowCrosshair(false);
 
+		// HP
+		hp = maxHP;
+		mainUI->hp = 1.0f;
+		
 		// 총알세팅
+		// 먼저 총알 UI에 있는 총알 다 제거해주자.
+		mainUI->RemoveAllAmmo();
 		bulletCount = maxBulletCount;
 		for (int i=0; i < bulletCount; i++)
 		{
