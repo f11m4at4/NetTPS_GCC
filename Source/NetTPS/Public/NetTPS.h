@@ -6,8 +6,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(NetTPS, Log, All);
 
-#define NETMODE (GetNetMode()==ENetMode::NM_Client?TEXT("Client") : \
-	GetNetMode()==ENetMode::NM_Standalone?TEXT("Standalone") : TEXT("Server"))
+#define NETMODE (GetWorld()->GetNetMode()==ENetMode::NM_Client?TEXT("Client") : \
+	GetWorld()->GetNetMode()==ENetMode::NM_Standalone?TEXT("Standalone") : TEXT("Server"))
 // 호출하는 함수와 줄번호 정보
 #define APPINFO (FString(__FUNCTION__) + TEXT("(") + FString::FromInt(__LINE__) + TEXT(")"))
 #define PRINT_APPINFO() UE_LOG(NetTPS, Warning, TEXT("%s"), *APPINFO)

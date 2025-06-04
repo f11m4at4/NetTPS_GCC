@@ -1,0 +1,1 @@
+C:\UnrealEngine\UE_5.5\Engine\Binaries\Win64\UnrealEditor.exe C:\GithubProjects\NetTPS_GCC\NetTPS.uproject -game -ResX=600 -ResY=400 -WinX=100 -WinY=100 -WINDOWED -log

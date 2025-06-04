@@ -112,7 +112,7 @@ ANetTPSCharacter::ANetTPSCharacter()
 	hpUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("hpUIComp"));
 	hpUIComp->SetupAttachment(GetMesh());
 
-	ConstructorHelpers::FClassFinder<UHealthBar>tempHP(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UIs/WBP_HealthBar.WBP_HealthBar'_C"));
+	ConstructorHelpers::FClassFinder<UHealthBar>tempHP(TEXT("'/Game/Net/UIs/WBP_HealthBar.WBP_HealthBar_C'"));
 	if (tempHP.Succeeded())
 	{
 		hpUIComp->SetWidgetClass(tempHP.Class);

@@ -13,6 +13,5 @@ ANetTPSGameMode::ANetTPSGameMode()
 	if (PlayerPawnBPClass.Class != NULL)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
-		PRINTLOG(TEXT("%s"), TEXT("Hello World"));
 	}
 }
