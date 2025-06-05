@@ -5,6 +5,7 @@
 
 #include "NetTPS.h"
 #include "OnlineSessionSettings.h"
+#include "Online/OnlineSessionNames.h"
 
 void UNetGameInstance::Init()
 {
@@ -16,6 +17,8 @@ void UNetGameInstance::Init()
 
 		// 세션 이벤트 콜백 등록
 		sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnCreateSessionCompelete);
+		// 세션 검색 이벤트 등록
+		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
 	}
 
 	// 세션 생성
@@ -23,7 +26,8 @@ void UNetGameInstance::Init()
 	GetWorld()->GetTimerManager().SetTimer(handle,
 		FTimerDelegate::CreateLambda([&]
 	{
-		CreateMySession(mySessionName, 10);
+		// CreateMySession(mySessionName, 10);
+			FindOtherSessions();
 	}
 	), 2, false);
 }
@@ -70,4 +74,63 @@ void UNetGameInstance::CreateMySession(FString roomName, int32 playerCount)
 void UNetGameInstance::OnCreateSessionCompelete(FName sessionName, bool bWasSuccessful)
 {
 	PRINTLOG(TEXT("SessionName : %s, bWasSuccessful : %d"), *sessionName.ToString(), bWasSuccessful);
+}
+
+void UNetGameInstance::FindOtherSessions()
+{
+	// 찾을 조건들을 설정
+	sessionSearch = MakeShareable(new FOnlineSessionSearch());
+
+	// 1. 존재여부를 검색 가능하게 해 놓은 녀석만 찾자.
+	sessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	// 2. Lan 사용여부
+	sessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == FName("NULL");
+	// 3. 최대 검색 세션(방) 수
+	sessionSearch->MaxSearchResults = 10;
+	// 4. 세션 검색
+	sessionInterface->FindSessions(0, sessionSearch.ToSharedRef());
+}
+
+void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+{
+	// 찾기 실패시 아무것도 하지 말자.
+	if (bWasSuccessful == false)
+	{
+		PRINTLOG(TEXT("Session search failed!!!"));
+		return;
+	}
+
+	// 세션 검색결과 배열
+	auto results = sessionSearch->SearchResults;
+
+	PRINTLOG(TEXT("Search Result Count : %d"), results.Num());
+
+	for (int i=0; i < results.Num(); i++)
+	{
+		auto sr = results[i];
+		if (sr.IsValid() == false)
+		{
+			continue;
+		}
+
+		// 세션 정보 저장할 구조체
+		FSessionInfo sessionInfo;
+		sessionInfo.index = i;
+		
+		// 방이름
+		sr.Session.SessionSettings.Get(FName("ROOM_NAME"), sessionInfo.roomName);
+		sr.Session.SessionSettings.Get(FName("HOST_NAME"), sessionInfo.hostName);
+
+		// 최대 입장가능한 플레이어 수
+		int32 maxPlayerCount = sr.Session.SessionSettings.NumPublicConnections; 
+		// 현재 입장한 플레이어수 (최대 - 현재 입장가능한 수)
+		int32 currentPlayerCount = maxPlayerCount - sr.Session.NumOpenPublicConnections;
+
+		sessionInfo.playerCount = FString::Printf(TEXT("(%d/%d)"), currentPlayerCount, maxPlayerCount);
+		
+		// 핑정보
+		sessionInfo.pingSpeed = sr.PingInMs;
+
+		PRINTLOG(TEXT("%s"), *sessionInfo.ToString());
+	}
 }
