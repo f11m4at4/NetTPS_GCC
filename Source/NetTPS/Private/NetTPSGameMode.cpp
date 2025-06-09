@@ -14,4 +14,6 @@ ANetTPSGameMode::ANetTPSGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	bUseSeamlessTravel = false;
 }

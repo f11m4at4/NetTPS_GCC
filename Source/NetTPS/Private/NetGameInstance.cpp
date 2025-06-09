@@ -80,7 +80,7 @@ void UNetGameInstance::OnCreateSessionCompelete(FName sessionName, bool bWasSucc
 	// -> Server Travel (Game Server open)
 	if (bWasSuccessful)
 	{
-		GetWorld()->ServerTravel(TEXT("/Game/Net/Maps/BattleMap?listen"));
+		GetWorld()->ServerTravel(TEXT("/Game/Net/Maps/BattleMap?listen?port=7777"));
 		FString url;
 		sessionInterface->GetResolvedConnectString(sessionName, url);
 		PRINTLOG(TEXT("URL : %s"), *url);
