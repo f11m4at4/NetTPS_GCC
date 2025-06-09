@@ -37,6 +37,14 @@ public:
 	class UButton* btn_back;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* btn_back_1;
+
+	// 방검색 버튼
+	UPROPERTY(meta = (BindWidget))
+	class UButton* btn_find;
+
+	// 방검색 메시지
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* txt_findingMsg;
 	
 	// 세션 슬롯 추가할 스크롤박스
 	UPROPERTY(meta = (BindWidget))
@@ -71,4 +79,12 @@ public:
 
 	UFUNCTION()
 	void AddSlotWidget(const struct FSessionInfo& sessionInfo);
+
+	// 방검색 버튼 클릭시 호출될 콜백
+	UFUNCTION()
+	void OnClickedFindSession();
+
+	// 방찾기 상태 이벤트 콜백
+	UFUNCTION()
+	void OnFindStateEnable(bool bIsSearching);
 };

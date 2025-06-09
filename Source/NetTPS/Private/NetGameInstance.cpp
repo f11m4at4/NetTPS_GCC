@@ -19,17 +19,19 @@ void UNetGameInstance::Init()
 		sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnCreateSessionCompelete);
 		// 세션 검색 이벤트 등록
 		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
+		// 세션 입장 이벤트 등록
+		sessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnJoinSessionComplete);
 	}
 
 	// 세션 생성
-	FTimerHandle handle;
-	GetWorld()->GetTimerManager().SetTimer(handle,
-		FTimerDelegate::CreateLambda([&]
-	{
-		// CreateMySession(mySessionName, 10);
-			FindOtherSessions();
-	}
-	), 2, false);
+	// FTimerHandle handle;
+	// GetWorld()->GetTimerManager().SetTimer(handle,
+	// 	FTimerDelegate::CreateLambda([&]
+	// {
+	// 	// CreateMySession(mySessionName, 10);
+	// 		FindOtherSessions();
+	// }
+	// ), 2, false);
 }
 
 void UNetGameInstance::CreateMySession(FString roomName, int32 playerCount)
@@ -74,10 +76,22 @@ void UNetGameInstance::CreateMySession(FString roomName, int32 playerCount)
 void UNetGameInstance::OnCreateSessionCompelete(FName sessionName, bool bWasSuccessful)
 {
 	PRINTLOG(TEXT("SessionName : %s, bWasSuccessful : %d"), *sessionName.ToString(), bWasSuccessful);
+	// 방만드는게 성공하면
+	// -> Server Travel (Game Server open)
+	if (bWasSuccessful)
+	{
+		GetWorld()->ServerTravel(TEXT("/Game/Net/Maps/BattleMap?listen"));
+		FString url;
+		sessionInterface->GetResolvedConnectString(sessionName, url);
+		PRINTLOG(TEXT("URL : %s"), *url);
+	}
 }
 
 void UNetGameInstance::FindOtherSessions()
 {
+	// 검색 시작 : 이때 화면 비활성화 시켜줘야한다.
+	OnSearchState.Broadcast(true);
+	
 	// 찾을 조건들을 설정
 	sessionSearch = MakeShareable(new FOnlineSessionSearch());
 
@@ -93,6 +107,9 @@ void UNetGameInstance::FindOtherSessions()
 
 void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
+	// 로비위젯 방검색 비활성화 종료
+	OnSearchState.Broadcast(false);
+	
 	// 찾기 실패시 아무것도 하지 말자.
 	if (bWasSuccessful == false)
 	{
@@ -132,5 +149,44 @@ void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 		sessionInfo.pingSpeed = sr.PingInMs;
 
 		PRINTLOG(TEXT("%s"), *sessionInfo.ToString());
+
+		// 델리게이트로 위젯에 알려주기
+		OnSearchComplete.Broadcast(sessionInfo);
 	}
 }
+
+void UNetGameInstance::JoinSelectedSession(int32 index)
+{
+	// 검색 결과 목록(배열)중 index 번째 녀석으로 방 입장하기
+	auto sr = sessionSearch->SearchResults[index];
+	sr.Session.SessionSettings.Get(FName("ROOM_NAME"), mySessionName);
+	sr.Session.SessionSettings.bUseLobbiesIfAvailable = true;
+	sessionInterface->JoinSession(0, FName(mySessionName), sr);
+}
+
+void UNetGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (Result == EOnJoinSessionCompleteResult::Success)
+	{
+		// 방으로 Client Travel
+		auto pc = GetWorld()->GetFirstPlayerController();
+		FString url;
+		sessionInterface->GetResolvedConnectString(SessionName, url);
+		PRINTLOG(TEXT("Join session URL : %s"), *url);
+		if (url.IsEmpty() == false)
+		{
+			pc->ClientTravel(url, TRAVEL_Absolute);
+		}
+	}
+	else
+	{
+		PRINTLOG(TEXT("JoinSessionComplete Failed : %d"), Result);
+	}
+}
+
+
+
+
+
+
+

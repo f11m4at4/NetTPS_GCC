@@ -13,4 +13,7 @@ UCLASS()
 class NETTPS_API ALobbyGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+
+public:
+	ALobbyGameMode();
 };

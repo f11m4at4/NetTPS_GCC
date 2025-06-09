@@ -30,6 +30,13 @@ struct FSessionInfo
 	}
 };
 
+// 세션 검색 끝났을 때 호출될 델리게이트
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchComplete, const FSessionInfo&, sessionInfo);
+
+// 세션 검색 중일때 -> 비활성화 시키고 싶다.
+// -> 이때 사용될 델리게이트 필요
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchStateSignature, bool, bIsSearching);
+
 
 UCLASS()
 class NETTPS_API UNetGameInstance : public UGameInstance
@@ -63,4 +70,15 @@ public:
 
 	// 방찾기 이벤트 콜백
 	void OnFindSessionsComplete(bool bWasSuccessful);
+
+	// 방찾기 완료 콜백을 등록할 델리게이트
+	FSearchComplete OnSearchComplete;
+
+	// 방찾기 상태 콜백 델리게이트
+	FSearchStateSignature OnSearchState;
+
+public: // --------- 세션(방) 입장 ------------
+	void JoinSelectedSession(int32 index);
+
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };

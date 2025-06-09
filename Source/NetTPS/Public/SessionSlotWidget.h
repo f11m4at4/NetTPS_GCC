@@ -23,8 +23,15 @@ public:
 	class UTextBlock* txt_playerCount;
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* txt_pingSpeed;
+	UPROPERTY(meta=(BindWidget))
+	class UButton* btn_join;
 
 	int32 sessionNumber = 0;
 
+	virtual void NativeConstruct() override;
+	
 	void Set(const struct FSessionInfo& sessionInfo);
+
+	UFUNCTION()
+	void JoinSession();
 };
