@@ -46,6 +46,10 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* txt_findingMsg;
 	
+	// 사용자 이름
+	UPROPERTY(meta = (BindWidget))
+	class UEditableText* edit_userName;
+	
 	// 세션 슬롯 추가할 스크롤박스
 	UPROPERTY(meta = (BindWidget))
 	class UScrollBox* scroll_roomList;

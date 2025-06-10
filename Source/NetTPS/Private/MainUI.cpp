@@ -8,7 +8,10 @@
 #include "Components/Button.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
 
 UMainUI::UMainUI(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -24,6 +27,24 @@ void UMainUI::NativeConstruct()
 	Super::NativeConstruct();
 
 	btn_retry->OnClicked.AddDynamic(this, &UMainUI::OnRetryClicked);
+}
+
+void UMainUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	// 사용자 정보 갱신해주기
+	// -> 플레어들 전부를 가져와야한다.
+	TArray<APlayerState*> playerArr = GetWorld()->GetGameState()->PlayerArray;
+	FString nameStr;
+	for (auto pState : playerArr)
+	{
+		// 이름 : 점수
+		nameStr.Append(FString::Printf(TEXT("%s : %d\n"),
+			*pState->GetPlayerName(), (int32)pState->GetScore()));
+	}
+
+	txt_users->SetText(FText::FromString(nameStr));
 }
 
 void UMainUI::ShowCrosshair(bool isShow)

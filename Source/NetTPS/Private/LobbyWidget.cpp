@@ -55,12 +55,20 @@ void ULobbyWidget::OnValueChanged(float value)
 
 void ULobbyWidget::SwitchCreatePanel()
 {
+	if (edit_userName->GetText().IsEmpty() == false)
+	{
+		gi->myName = edit_userName->GetText().ToString();
+	}
 	WidgetSwitcher->SetActiveWidgetIndex(1);
 }
 
 // 방목록 검색 화면
 void ULobbyWidget::SwitchFindPanel()
 {
+	if (edit_userName->GetText().IsEmpty() == false)
+	{
+		gi->myName = edit_userName->GetText().ToString();
+	}
 	WidgetSwitcher->SetActiveWidgetIndex(2);
 	OnClickedFindSession();
 }

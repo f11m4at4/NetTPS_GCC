@@ -40,8 +40,14 @@ public:
 	class UButton* btn_retry;
 	UPROPERTY(meta=(BindWidget))
 	class UButton* btn_exit;
+
+	// 사용자 목록
+	UPROPERTY(meta=(BindWidget))
+	class UTextBlock* txt_users;
 public:
 	virtual void NativeConstruct() override;
+
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 	// 크로스헤어 보일지여부 처리 함수
 	void ShowCrosshair(bool isShow);

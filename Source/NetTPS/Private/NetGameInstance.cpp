@@ -21,6 +21,8 @@ void UNetGameInstance::Init()
 		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
 		// 세션 입장 이벤트 등록
 		sessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnJoinSessionComplete);
+		// 세션 종료 이벤트 등록
+		sessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnMyExitRoomComplete);
 	}
 
 	// 세션 생성
@@ -64,7 +66,7 @@ void UNetGameInstance::CreateMySession(FString roomName, int32 playerCount)
 	mySessionName = roomName;
 	sessionSettings.Set(FName("ROOM_NAME"), mySessionName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	// 9. 호스트네임 설정
-	sessionSettings.Set(FName("HOST_NAME"), myHostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	sessionSettings.Set(FName("HOST_NAME"), myName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	// NetID
 	FUniqueNetIdPtr netID = GetWorld()->GetFirstLocalPlayerFromController()->GetUniqueNetIdForPlatformUser().GetUniqueNetId();
@@ -184,7 +186,21 @@ void UNetGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	}
 }
 
+void UNetGameInstance::ExitRoom()
+{
+}
 
+void UNetGameInstance::ServerRPC_ExitRoom_Implementation()
+{
+}
+
+void UNetGameInstance::MultiRPC_ExitRoom_Implementation()
+{
+}
+
+void UNetGameInstance::OnMyExitRoomComplete(FName sessionName, bool bWasSuccessful)
+{
+}
 
 
 

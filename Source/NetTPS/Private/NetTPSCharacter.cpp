@@ -14,6 +14,7 @@
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "NetPlayerController.h"
+#include "NetPlayerState.h"
 #include "NetTPS.h"
 #include "Components/HorizontalBox.h"
 #include "Components/WidgetComponent.h"
@@ -173,6 +174,19 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+}
+
+// 네트워크에서 동기화 처리까지 다 끝난 "후" 호출되는 함수
+void ANetTPSCharacter::PostNetInit()
+{
+	Super::PostNetInit();
+
+	// ownedPistol 에는 값이 들어갔을 때
+	if (bHasPistol && ownedPistol)
+	{
+		// -> AttachPistol 을 해줘야 한다.
+		AttachPistol(ownedPistol);
 	}
 }
 
@@ -450,6 +464,10 @@ void ANetTPSCharacter::ServerRPC_FirePistol_Implementation()
 		if (otherPlayer)
 		{
 			otherPlayer->DamageProcess();
+
+			// 스코어처리
+			auto ps = Cast<ANetPlayerState>(GetPlayerState());
+			ps->SetScore(ps->GetScore() + 1);
 		}
 	}
 
@@ -656,6 +674,7 @@ void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 
 	DOREPLIFETIME(ANetTPSCharacter, bHasPistol);
 	DOREPLIFETIME(ANetTPSCharacter, hp);
+	DOREPLIFETIME(ANetTPSCharacter, ownedPistol);
 	
 	// DOREPLIFETIME(ANetTPSCharacter, bulletCount);
 }

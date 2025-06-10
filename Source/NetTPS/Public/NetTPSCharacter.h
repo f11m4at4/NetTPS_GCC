@@ -82,8 +82,11 @@ public: // --------- 총잡기 -----------
 	UPROPERTY(Replicated)
 	bool bHasPistol = false;
 	
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	AActor* ownedPistol = nullptr;
+
+	virtual void PostNetInit() override;
+	
 	UPROPERTY(EditAnywhere, Category=Gun)
 	float distanceToGun = 200;
 

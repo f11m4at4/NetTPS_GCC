@@ -60,7 +60,7 @@ public:
 	FString mySessionName = "Default Room";
 	
 	// 호스트 사용자 이름
-	FString myHostName = "Brad";
+	FString myName = "Brad";
 
 public:
 	// ------------- 방검색 --------------
@@ -81,4 +81,14 @@ public: // --------- 세션(방) 입장 ------------
 	void JoinSelectedSession(int32 index);
 
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+public: // ------------ 나가기 ---------------
+	void ExitRoom();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ExitRoom();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_ExitRoom();
+
+	void OnMyExitRoomComplete(FName sessionName, bool bWasSuccessful);
 };
