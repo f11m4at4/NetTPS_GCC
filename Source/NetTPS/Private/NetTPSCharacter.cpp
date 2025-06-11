@@ -170,6 +170,9 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// 재장전
 		EnhancedInputComponent->BindAction(ia_Relaod, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
 		
+		EnhancedInputComponent->BindAction(voiceAction, ETriggerEvent::Started, this, &ANetTPSCharacter::StartVoiceChat);
+		EnhancedInputComponent->BindAction(voiceAction, ETriggerEvent::Completed, this, &ANetTPSCharacter::StopVoiceChat);
+		
 	}
 	else
 	{
@@ -679,5 +682,13 @@ void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	// DOREPLIFETIME(ANetTPSCharacter, bulletCount);
 }
 
+void ANetTPSCharacter::StartVoiceChat()
+{
+	GetController<ANetPlayerController>()->StartTalking();
+}
 
+void ANetTPSCharacter::StopVoiceChat()
+{
+	GetController<ANetPlayerController>()->StopTalking();
+}
 

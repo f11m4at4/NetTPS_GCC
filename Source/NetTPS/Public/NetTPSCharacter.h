@@ -213,5 +213,12 @@ public: // -------------- RPC --------------------
 	void ClientRPC_ReloadPistol(int bc);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+public: // --------- Voice Chat -------------
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	UInputAction* voiceAction;
+
+	void StartVoiceChat();
+	void StopVoiceChat();
 };
 
