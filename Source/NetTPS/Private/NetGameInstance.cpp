@@ -218,7 +218,7 @@ void UNetGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, EN
 	// 서버와의 연결이 끊기면 정상적으로 방을 나가고 싶다.
 	if (FailureType == ENetworkFailure::ConnectionLost)
 	{
-		//MultiRPC_ExitRoom_Implementation();
+		MultiRPC_ExitRoom_Implementation();
 	}
 }
 
