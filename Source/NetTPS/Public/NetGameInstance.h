@@ -91,4 +91,8 @@ public: // ------------ 나가기 ---------------
 	void MultiRPC_ExitRoom();
 
 	void OnMyExitRoomComplete(FName sessionName, bool bWasSuccessful);
+	
+	void OnNetworkFailure(UWorld * World, UNetDriver *NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString = TEXT(""));
+	// 아직 게임 방(세션)안에 있는지 여부
+	bool IsInRoom();
 };

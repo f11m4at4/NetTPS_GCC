@@ -4,6 +4,7 @@
 #include "NetActor.h"
 
 #include "EngineUtils.h"
+#include "NetGameInstance.h"
 #include "NetTPS.h"
 #include "NetTPSCharacter.h"
 #include "Net/UnrealNetwork.h"
@@ -37,7 +38,6 @@ void ANetActor::BeginPlay()
 	// 서버에서만 처리한다.
 	if (HasAuthority())
 	{
-		FTimerHandle handle;
 
 		// 처리함수
 		auto changeColorFunc = [&]()
@@ -45,10 +45,21 @@ void ANetActor::BeginPlay()
 			// 색을 랜덤으로 설정해서 넣어주기
 			FLinearColor matColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
 			// OnRep_ChangeMatColor();
-			ServerRPC_ChangeColor(matColor);
+			auto gi = GetGameInstance<UNetGameInstance>();
+			if (gi && gi->IsInRoom())
+			{
+				ServerRPC_ChangeColor(matColor);
+			}
 		};
 		GetWorldTimerManager().SetTimer(handle, changeColorFunc, 1, true);
 	}
+}
+
+void ANetActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(handle);
 }
 
 // matColor 가 네트워크에서 변경됐을 때 호출되는 콜백

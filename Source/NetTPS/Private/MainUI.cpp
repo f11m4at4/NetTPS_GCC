@@ -3,6 +3,7 @@
 
 #include "MainUI.h"
 
+#include "NetGameInstance.h"
 #include "NetPlayerController.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Button.h"
@@ -27,6 +28,7 @@ void UMainUI::NativeConstruct()
 	Super::NativeConstruct();
 
 	btn_retry->OnClicked.AddDynamic(this, &UMainUI::OnRetryClicked);
+	btn_exit->OnClicked.AddDynamic(this, &UMainUI::OnExitClicked);
 }
 
 void UMainUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -92,5 +94,14 @@ void UMainUI::OnRetryClicked()
 		pc->SetShowMouseCursor(false);
 		// pc->ServerRPC_RespawnPlayer();
 		pc->ServerRPC_ChangeToSpectator();
+	}
+}
+
+void UMainUI::OnExitClicked()
+{
+	auto gi = Cast<UNetGameInstance>(GetWorld()->GetGameInstance());
+	if (gi)
+	{
+		gi->ExitRoom();
 	}
 }

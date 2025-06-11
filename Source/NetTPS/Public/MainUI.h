@@ -66,4 +66,8 @@ public:
 	// retry 버튼 이벤트 콜백
 	UFUNCTION()
 	void OnRetryClicked();
+
+	// 게임종료 - 나가기
+	UFUNCTION()
+	void OnExitClicked();
 };
