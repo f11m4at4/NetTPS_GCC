@@ -692,3 +692,17 @@ void ANetTPSCharacter::StopVoiceChat()
 	GetController<ANetPlayerController>()->StopTalking();
 }
 
+void ANetTPSCharacter::ServerRPC_SendMsg_Implementation(const FString& msg)
+{
+	MultiRPC_SendMsg(msg);
+}
+
+void ANetTPSCharacter::MultiRPC_SendMsg_Implementation(const FString& msg)
+{
+	// 모든 클라에서 호출된다.
+	auto pc = Cast<ANetPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (pc)
+	{
+		pc->mainUI->ReceiveMsg(msg);
+	}
+}

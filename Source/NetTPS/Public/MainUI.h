@@ -70,4 +70,23 @@ public:
 	// 게임종료 - 나가기
 	UFUNCTION()
 	void OnExitClicked();
+
+public: // ------------- 채팅 -----------------------
+	UPROPERTY(meta=(BindWidget))
+	class UScrollBox* scroll_msgList;
+	UPROPERTY(meta=(BindWidget))
+	class UEditableText* edit_input;
+	UPROPERTY(meta=(BindWidget))
+	class UButton* btn_send;
+
+	// 채팅 메시지 위젯
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UChatWidget> chatWidgetFactory;
+
+	// 메시지 전송함수
+	UFUNCTION()
+	void SendMsg();
+	
+	// 메시지 수신함수
+	void ReceiveMsg(const FString& msg);
 };

@@ -220,5 +220,11 @@ public: // --------- Voice Chat -------------
 
 	void StartVoiceChat();
 	void StopVoiceChat();
+
+public: // -------------- 채팅 -----------------
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SendMsg(const FString& msg);
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_SendMsg(const FString& msg);
 };
 
