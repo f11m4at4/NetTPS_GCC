@@ -5,6 +5,8 @@
 
 #include "NetTPSGameMode.h"
 #include "MainUI.h"
+#include "NetGameInstance.h"
+#include "NetTPS.h"
 #include "GameFramework/SpectatorPawn.h"
 
 ANetPlayerController::ANetPlayerController()

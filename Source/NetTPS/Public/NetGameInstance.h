@@ -85,11 +85,6 @@ public: // --------- 세션(방) 입장 ------------
 public: // ------------ 나가기 ---------------
 	void ExitRoom();
 
-	UFUNCTION(Server, Reliable)
-	void ServerRPC_ExitRoom();
-	UFUNCTION(NetMulticast, Reliable)
-	void MultiRPC_ExitRoom();
-
 	void OnMyExitRoomComplete(FName sessionName, bool bWasSuccessful);
 	
 	void OnNetworkFailure(UWorld * World, UNetDriver *NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString = TEXT(""));

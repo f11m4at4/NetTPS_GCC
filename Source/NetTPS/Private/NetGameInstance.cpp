@@ -189,17 +189,6 @@ void UNetGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 
 void UNetGameInstance::ExitRoom()
 {
-	ServerRPC_ExitRoom();
-}
-
-void UNetGameInstance::ServerRPC_ExitRoom_Implementation()
-{
-	MultiRPC_ExitRoom();
-}
-
-void UNetGameInstance::MultiRPC_ExitRoom_Implementation()
-{
-	// 세션종료
 	sessionInterface->DestroySession(FName(*mySessionName));
 }
 
@@ -218,7 +207,7 @@ void UNetGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, EN
 	// 서버와의 연결이 끊기면 정상적으로 방을 나가고 싶다.
 	if (FailureType == ENetworkFailure::ConnectionLost)
 	{
-		MultiRPC_ExitRoom_Implementation();
+		ExitRoom();
 	}
 }
 
@@ -228,6 +217,7 @@ bool UNetGameInstance::IsInRoom()
 	
 	return sessionInterface->IsPlayerInSession(FName(*mySessionName), *uniqueId);
 }
+
 
 
 
